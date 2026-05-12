@@ -1,0 +1,21 @@
+# Core data
+numpy>=1.26.0
+pandas>=2.2.0
+
+# Streamlit app
+streamlit>=1.32.0
+plotly>=5.20.0
+
+# Notebook visualization
+matplotlib>=3.7.0
+scikit-learn>=1.4.0
+
+# HTTP (for requests in app if needed)
+requests>=2.31.0
+
+# Kagglehub
+kagglehub>=1.0.0
+
+crewai
+litellm
+ollama
