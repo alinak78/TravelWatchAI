@@ -62,7 +62,7 @@ def render():
         label_visibility="collapsed",
     )
 
-    use_crew = st.checkbox("Use CrewAI explanation", value=False)
+    use_crew = st.checkbox("Try CrewAI/Ollama explanation", value=False)
 
     run_btn = st.button("Run Agent", type="primary")
 
@@ -109,6 +109,11 @@ def render():
     if result.get("explanation"):
         st.markdown("<br>", unsafe_allow_html=True)
         st.write(result["explanation"])
+
+    if result.get("crew_error"):
+        st.warning(
+            "CrewAI/Ollama explanation was unavailable, so TravelWatch used the local ML explanation."
+        )
 
     st.markdown("<br>", unsafe_allow_html=True)
 

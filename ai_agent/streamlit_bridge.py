@@ -22,6 +22,33 @@ from ai_agent.crew import (
 from prediction_engine import predict_flight
 
 
+def _build_local_explanation(task, flight_data: dict[str, Any], prediction: dict[str, Any]) -> str:
+    recommendation = prediction.get("recommendation", "WAIT")
+    confidence = prediction.get("confidence", 0)
+    current_price = prediction.get("current_price", flight_data.get("current_price"))
+    predicted_price = prediction.get("predicted_price", current_price)
+    target = flight_data.get("target")
+    change_pct = prediction.get("change_pct", 0)
+    change_dir = prediction.get("change_dir", "unknown")
+
+    if recommendation == "BUY":
+        reason = (
+            "The current fare is at or near the target price, so this looks like a good time to book."
+        )
+    else:
+        reason = (
+            "The current fare is not attractive enough against the target price, so waiting is safer."
+        )
+
+    return (
+        f"{recommendation} recommendation for {task.origin} to {task.destination} "
+        f"on {task.departure_date}. {reason} Current fare is {task.currency} {current_price}, "
+        f"predicted price is {task.currency} {predicted_price}, target is {task.currency} {target}, "
+        f"and the model expects prices to move {change_dir} by about {change_pct}%. "
+        f"Confidence: {confidence}%."
+    )
+
+
 def run_agent_request(user_request: str, use_crew_explanation: bool = False) -> dict[str, Any]:
     task = parse_watch_request(user_request)
     flight_data = build_flight_data(task)
@@ -43,7 +70,8 @@ def run_agent_request(user_request: str, use_crew_explanation: bool = False) -> 
             "error": str(exc),
         }
 
-    explanation = ""
+    explanation = _build_local_explanation(task, flight_data, prediction)
+    crew_error = ""
 
     if use_crew_explanation:
         try:
@@ -51,7 +79,7 @@ def run_agent_request(user_request: str, use_crew_explanation: bool = False) -> 
             crew_result = crew.kickoff()
             explanation = str(crew_result)
         except Exception as exc:
-            explanation = f"CrewAI explanation unavailable: {exc}"
+            crew_error = str(exc)
 
     current_price = prediction.get("current_price", flight_data.get("current_price"))
     predicted_price = prediction.get("predicted_price", current_price)
@@ -75,6 +103,7 @@ def run_agent_request(user_request: str, use_crew_explanation: bool = False) -> 
         "booking_link": booking_link(task),
         "price_source": "live_or_fallback",
         "explanation": explanation,
+        "crew_error": crew_error,
         "raw_prediction": prediction,
         "raw_flight_data": flight_data,
         "created_date": str(date.today()),
